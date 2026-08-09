@@ -5,161 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Git 흐름 인터랙티브 튜토리얼</title>
 <style>
-:root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-* { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; background: #0b1020; color: #e8ecf5; }
-main { width: min(1120px, 94vw); margin: 0 auto; padding: 42px 0 60px; }
-h1 { margin: 0 0 10px; font-size: clamp(30px, 5vw, 52px); }
-.subtitle { color: #aab4c8; margin-bottom: 30px; line-height: 1.6; }
-.card { margin-top: 22px; padding: 24px; border: 1px solid #2b3550; border-radius: 16px; background: #10172a; }
-.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: stretch; }
-.stage { border: 1px solid #2b3550; border-radius: 16px; padding: 20px; background: #121a2d; min-height: 170px; transition: .25s; }
-.stage.active { border-color: #7dd3fc; transform: translateY(-3px); box-shadow: 0 10px 30px #0006; }
-.stage h2 { margin: 0 0 8px; font-size: 19px; }
-.stage p { color: #aab4c8; line-height: 1.55; margin: 0; }
-.arrow { display: grid; place-items: center; color: #6f7b93; font-size: 25px; }
-.controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-button { border: 1px solid #34415f; background: #19243a; color: #eef4ff; border-radius: 10px; padding: 11px 15px; cursor: pointer; font-weight: 650; }
-button:hover { background: #22304b; }
-button.primary { background: #2563eb; border-color: #3b82f6; }
-button:disabled { opacity: .45; cursor: not-allowed; }
-#log { min-height: 100px; white-space: pre-wrap; color: #c9d4e8; line-height: 1.65; }
-.file-tree { display: grid; gap: 8px; margin-top: 16px; }
-.file { display: flex; justify-content: space-between; gap: 20px; padding: 10px 12px; background: #0b1222; border: 1px solid #202b43; border-radius: 9px; }
-.badge { color: #9fb0ca; font-size: 13px; }
-.commit-tree { margin-top: 18px; padding: 22px; background: #0b1222; border: 1px solid #202b43; border-radius: 14px; overflow-x: auto; }
-.branch { display: flex; align-items: center; min-width: 720px; margin: 12px 0; }
-.branch-label { width: 100px; color: #9fb0ca; font-size: 13px; }
-.node { position: relative; display: grid; place-items: center; min-width: 92px; height: 58px; margin-right: 34px; border: 2px solid #64748b; border-radius: 12px; background: #121a2d; font-size: 12px; text-align: center; }
-.node::after { content: ""; position: absolute; width: 34px; height: 2px; right: -36px; background: #475569; }
-.node:last-child::after { display: none; }
-.node.active { border-color: #7dd3fc; box-shadow: 0 0 0 3px #7dd3fc22; }
-.node.feature { border-color: #a78bfa; }
-.node.remote { border-color: #34d399; }
-.merge-line { color: #aab4c8; font-size: 13px; margin: 8px 0 8px 100px; }
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.step { padding: 16px; border-radius: 12px; background: #121a2d; border: 1px solid #2b3550; }
-.step strong { display: block; margin-bottom: 8px; }
-.step code { color: #c4b5fd; display: block; margin-top: 8px; white-space: pre-wrap; }
-.explain { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.explain > div { padding: 18px; border-radius: 14px; background: #121a2d; border: 1px solid #2b3550; }
-.explain h3 { margin-top: 0; }
-@media (max-width: 800px) { .pipeline, .steps, .explain { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); min-height: 18px; } }
-</style>
-</head>
-<body>
-<main>
-<h1>Git은 어떻게 움직일까?</h1>
-<div class="subtitle">Working Tree → Staging → Commit → Remote와, branch → push → Pull Request → merge → pull까지 한 흐름으로 이해해 보세요.</div>
-
-<section class="pipeline" aria-label="Git workflow">
-  <div class="stage" id="stage-work"><h2>① Working Tree</h2><p>내가 실제로 수정하고 있는 현재 파일 상태.</p></div>
-  <div class="arrow">→</div>
-  <div class="stage" id="stage-stage"><h2>② Staging Area</h2><p>다음 commit에 포함할 변경을 선택해 모아두는 영역.</p></div>
-  <div class="arrow">→</div>
-  <div class="stage" id="stage-commit"><h2>③ Commit</h2><p>특정 시점의 프로젝트 상태를 Git 기록으로 남김.</p></div>
-  <div class="arrow">→</div>
-  <div class="stage" id="stage-remote"><h2>④ Remote</h2><p>GitHub에 commit을 push하면 다른 작업공간에서도 받을 수 있음.</p></div>
-</section>
-
-<section class="card">
-  <h2>1. 기본 흐름 직접 따라하기</h2>
-  <div class="controls">
-    <button class="primary" id="modify">파일 수정</button>
-    <button id="add" disabled>git add</button>
-    <button id="commit" disabled>git commit</button>
-    <button id="push" disabled>git push</button>
-    <button id="reset">처음부터</button>
-  </div>
-  <div id="log">시작하려면 「파일 수정」을 눌러보세요.</div>
-  <div class="file-tree" id="tree"></div>
-</section>
-
-<section class="card">
-  <h2>2. Branch는 어떻게 갈라질까?</h2>
-  <p class="subtitle">main의 한 commit에서 feature branch가 갈라지고, feature에서 독립적으로 commit을 쌓는 모습을 확인합니다.</p>
-  <div class="controls">
-    <button class="primary" id="branchBtn">feature 브랜치 생성</button>
-    <button id="featureBtn" disabled>feature에서 commit</button>
-    <button id="featurePushBtn" disabled>feature push</button>
-  </div>
-  <div class="commit-tree" id="commitTree"></div>
-</section>
-
-<section class="card">
-  <h2>3. 다른 작업공간에서는 어떻게 받나?</h2>
-  <div class="steps">
-    <div class="step"><strong>처음 받는 컴퓨터</strong> GitHub에 있는 repository 전체를 처음 가져옵니다.<code>git clone &lt;repository-url&gt;
-cd ai-connect</code></div>
-    <div class="step"><strong>이미 clone한 컴퓨터</strong> 원격 main의 최신 commit을 현재 작업공간으로 가져옵니다.<code>git switch main
-git pull</code></div>
-    <div class="step"><strong>feature 작업을 받기</strong> 원격 feature branch를 가져와 작업을 이어갈 수 있습니다.<code>git fetch origin
-git switch feature/git-branch-demo</code></div>
-  </div>
-  <div class="controls" style="margin-top:16px">
-    <button class="primary" id="pullBtn">다른 작업공간에서 git pull</button>
-  </div>
-  <div id="pullLog" class="subtitle" style="margin:0">main이 merge된 뒤 pull하면 다른 작업공간도 최신 상태로 이동합니다.</div>
-</section>
-
-<section class="card">
-  <h2>4. Pull Request → Merge</h2>
-  <p class="subtitle">feature branch를 GitHub에 push한 뒤 PR을 만들고 main에 합치는 협업 흐름입니다.</p>
-  <div class="controls">
-    <button class="primary" id="prBtn">Pull Request 생성</button>
-    <button id="mergeBtn" disabled>main에 Merge</button>
-  </div>
-  <div id="prLog" class="subtitle" style="margin:0">feature가 push된 뒤 Pull Request를 만들 수 있습니다.</div>
-</section>
-
-<section class="explain">
-  <div><h3>Branch는 파일 복사본이 아니다</h3><p>Branch는 특정 commit을 가리키는 이름표에 가깝습니다. feature를 만들었다고 프로젝트 전체가 별도 폴더로 복제되는 것이 아니라, 독립된 commit 흐름을 가리키게 됩니다.</p></div>
-  <div><h3>AI와 함께 쓸 때</h3><p>대화는 설계와 토론에 사용하고, Git 저장소는 현재 코드와 버전 이력을 보존합니다. 채팅창이 바뀌어도 저장소와 Markdown 문서에서 프로젝트 상태와 설계 의도를 다시 읽을 수 있습니다.</p></div>
-</section>
-</main>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#07120d;color:#e9f5ee}main{width:min(1120px,94vw);margin:auto;padding:42px 0 60px}h1{font-size:clamp(30px,5vw,52px);margin:0 0 10px}.subtitle{color:#a9c2b2;line-height:1.6;margin-bottom:30px}.card{margin-top:22px;padding:24px;border:1px solid #254434;border-radius:16px;background:#0d1d14}.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stage{border:1px solid #254434;border-radius:16px;padding:20px;background:#10251a;min-height:170px;transition:.25s}.stage.active{border-color:#4ade80;transform:translateY(-3px);box-shadow:0 10px 30px #0008}.stage h2{margin:0 0 8px;font-size:19px}.stage p{color:#a9c2b2;line-height:1.55;margin:0}.arrow{display:grid;place-items:center;color:#64806e;font-size:25px}.controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}button{border:1px solid #31543e;background:#173221;color:#edf9f1;border-radius:10px;padding:11px 15px;cursor:pointer;font-weight:650}button:hover{background:#20452d}button.primary{background:#166534;border-color:#22c55e}button:disabled{opacity:.45;cursor:not-allowed}#log,#pullLog,#prLog{min-height:70px;white-space:pre-wrap;color:#cfe4d6;line-height:1.65}.file-tree{display:grid;gap:8px;margin-top:16px}.file{display:flex;justify-content:space-between;padding:10px 12px;background:#09170f;border:1px solid #1c3827;border-radius:9px}.badge{color:#91ae9b;font-size:13px}.commit-tree{margin-top:18px;padding:22px;background:#09170f;border:1px solid #1c3827;border-radius:14px;overflow-x:auto}.branch{display:flex;align-items:center;min-width:720px;margin:12px 0}.branch-label{width:100px;color:#91ae9b;font-size:13px}.node{position:relative;display:grid;place-items:center;min-width:92px;height:58px;margin-right:34px;border:2px solid #5b7163;border-radius:12px;background:#10251a;font-size:12px;text-align:center}.node:after{content:"";position:absolute;width:34px;height:2px;right:-36px;background:#385343}.node:last-child:after{display:none}.node.active{border-color:#4ade80;box-shadow:0 0 0 3px #4ade8022}.node.feature{border-color:#86efac}.node.remote{border-color:#34d399}.merge-line{color:#a9c2b2;font-size:13px;margin:8px 0 8px 100px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.step{padding:16px;border-radius:12px;background:#10251a;border:1px solid #254434}.step strong{display:block;margin-bottom:8px}.step code{color:#86efac;display:block;margin-top:8px;white-space:pre-wrap}.explain{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}.explain>div{padding:18px;border-radius:14px;background:#10251a;border:1px solid #254434}.explain h3{margin-top:0}@media(max-width:800px){.pipeline,.steps,.explain{grid-template-columns:1fr}.arrow{transform:rotate(90deg);min-height:18px}}
+</style></head><body><main>
+<h1>Git은 어떻게 움직일까?</h1><div class="subtitle">Working Tree → Staging → Commit → Remote와 branch → push → Pull Request → merge → pull을 한 흐름으로 이해해 보세요.</div>
+<section class="pipeline"><div class="stage" id="stage-work"><h2>① Working Tree</h2><p>실제로 수정하고 있는 현재 파일 상태.</p></div><div class="arrow">→</div><div class="stage" id="stage-stage"><h2>② Staging Area</h2><p>다음 commit에 포함할 변경을 선택하는 영역.</p></div><div class="arrow">→</div><div class="stage" id="stage-commit"><h2>③ Commit</h2><p>특정 시점의 프로젝트 상태를 Git 기록으로 남김.</p></div><div class="arrow">→</div><div class="stage" id="stage-remote"><h2>④ Remote</h2><p>GitHub에 push하여 다른 작업공간과 공유.</p></div></section>
+<section class="card"><h2>1. 기본 흐름</h2><div class="controls"><button class="primary" id="modify">파일 수정</button><button id="add" disabled>git add</button><button id="commit" disabled>git commit</button><button id="push" disabled>git push</button><button id="reset">처음부터</button></div><div id="log">「파일 수정」부터 눌러보세요.</div><div class="file-tree" id="tree"></div></section>
+<section class="card"><h2>2. Branch는 어떻게 갈라질까?</h2><p class="subtitle">main에서 feature branch가 갈라지고 독립적으로 commit을 쌓는 모습을 확인합니다.</p><div class="controls"><button class="primary" id="branchBtn">feature 브랜치 생성</button><button id="featureBtn" disabled>feature에서 commit</button><button id="featurePushBtn" disabled>feature push</button></div><div class="commit-tree" id="commitTree"></div></section>
+<section class="card"><h2>3. 다른 작업공간에서 받기</h2><div class="steps"><div class="step"><strong>처음 받기</strong>GitHub 저장소를 처음 가져옵니다.<code>git clone &lt;repository-url&gt;
+cd ai-connect</code></div><div class="step"><strong>최신 main 받기</strong>이미 clone한 작업공간을 최신화합니다.<code>git switch main
+git pull</code></div><div class="step"><strong>원격 branch 확인</strong>원격 정보를 받고 branch를 선택합니다.<code>git fetch origin
+git switch feature/git-branch-demo</code></div></div><div class="controls" style="margin-top:16px"><button class="primary" id="pullBtn">다른 작업공간에서 git pull</button></div><div id="pullLog">main이 merge된 뒤 pull하면 다른 작업공간도 최신 상태가 됩니다.</div></section>
+<section class="card"><h2>4. Pull Request → Merge</h2><p class="subtitle">feature branch를 GitHub에 push하고 PR을 만든 뒤 main에 합칩니다.</p><div class="controls"><button class="primary" id="prBtn">Pull Request 생성</button><button id="mergeBtn" disabled>main에 Merge</button></div><div id="prLog">feature가 push된 뒤 Pull Request를 만들 수 있습니다.</div></section>
+<section class="explain"><div><h3>Branch는 파일 복사본이 아니다</h3><p>Branch는 특정 commit을 가리키는 이름표에 가깝습니다. 독립적인 commit 흐름을 만들 수 있습니다.</p></div><div><h3>AI와 Git</h3><p>대화는 설계와 토론에, Git은 실제 코드와 버전 이력에 사용합니다. 새 채팅에서도 Markdown과 저장소를 읽어 프로젝트 상태를 복원합니다.</p></div></section></main>
 <script>
-const stages = ["stage-work", "stage-stage", "stage-commit", "stage-remote"];
-const files = [["index.html", "추적 중"], ["AGENTS.md", "프로젝트 규칙"], ["docs/DECISIONS.md", "설계 결정"]];
-const log = document.getElementById("log");
-const tree = document.getElementById("tree");
-const buttons = { modify: document.getElementById("modify"), add: document.getElementById("add"), commit: document.getElementById("commit"), push: document.getElementById("push"), reset: document.getElementById("reset") };
-function highlight(n) { stages.forEach((id, i) => document.getElementById(id).classList.toggle("active", i === n)); }
-function renderFiles() { tree.innerHTML = files.map(([name, status]) => `<div class="file"><span>📄 ${name}</span><span class="badge">${status}</span></div>`).join(""); }
-function resetFlow() { highlight(-1); log.textContent = "시작하려면 「파일 수정」을 눌러보세요."; buttons.modify.disabled = false; buttons.add.disabled = true; buttons.commit.disabled = true; buttons.push.disabled = true; renderFiles(); }
-buttons.modify.onclick = () => { highlight(0); log.textContent = "Working Tree에 변경이 생겼습니다.\n예: index.html의 JavaScript를 수정했습니다.\n아직 commit에는 들어가지 않았습니다."; buttons.modify.disabled = true; buttons.add.disabled = false; };
-buttons.add.onclick = () => { highlight(1); log.textContent = "변경을 Staging Area에 올렸습니다.\n이제 다음 commit에 포함할 변경을 선택한 상태입니다."; buttons.add.disabled = true; buttons.commit.disabled = false; };
-buttons.commit.onclick = () => { highlight(2); log.textContent = "Commit이 생성되었습니다.\nGit 기록에 하나의 완성된 시점이 생겼습니다."; buttons.commit.disabled = true; buttons.push.disabled = false; };
-buttons.push.onclick = () => { highlight(3); log.textContent = "git push가 실행되었다고 가정합니다.\nCommit이 Remote(GitHub)에도 공유되었습니다."; buttons.push.disabled = true; };
-buttons.reset.onclick = resetFlow;
-
-const commitTree = document.getElementById("commitTree");
-const branchBtn = document.getElementById("branchBtn");
-const featureBtn = document.getElementById("featureBtn");
-const featurePushBtn = document.getElementById("featurePushBtn");
-let treeState = 0;
-function renderCommitTree() {
-  const remote = treeState >= 3 ? '<div class="node remote">R<br>origin/feature</div>' : '';
-  if (treeState === 0) {
-    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node active">A<br>initial</div><div class="node">B<br>main</div></div><div class="merge-line">● 각 원은 하나의 commit입니다. 오른쪽으로 갈수록 시간이 흐릅니다.</div>`;
-  } else if (treeState === 1) {
-    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node">A<br>initial</div><div class="node active">B<br>main</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature active">C<br>feature</div></div><div class="merge-line">↳ feature는 B에서 갈라져 독립적으로 작업할 수 있습니다.</div>`;
-  } else if (treeState === 2) {
-    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node">A<br>initial</div><div class="node">B<br>main</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C<br>feature</div><div class="node feature active">D<br>feature</div></div><div class="merge-line">↳ feature에서 C → D 두 개의 commit을 만들었습니다.</div>`;
-  } else {
-    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node">A<br>initial</div><div class="node">B<br>main</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C<br>feature</div><div class="node feature">D<br>feature</div>${remote}</div><div class="merge-line">↳ feature를 push하면 GitHub에 <b>origin/feature</b> 같은 원격 추적 branch가 보이게 됩니다.</div>`;
-  }
-}
-branchBtn.onclick = () => { treeState = 1; branchBtn.disabled = true; featureBtn.disabled = false; renderCommitTree(); };
-featureBtn.onclick = () => { treeState = 2; featureBtn.disabled = true; featurePushBtn.disabled = false; renderCommitTree(); };
-featurePushBtn.onclick = () => { treeState = 3; featurePushBtn.disabled = true; renderCommitTree(); };
-
-document.getElementById("pullBtn").onclick = () => { document.getElementById("pullLog").textContent = "git pull = 원격 저장소의 최신 변경을 가져와 현재 branch에 통합합니다. 예: origin/main → local main. 다른 컴퓨터에서도 같은 프로젝트 상태를 재현할 수 있습니다."; };
-const prBtn = document.getElementById("prBtn");
-const mergeBtn = document.getElementById("mergeBtn");
-prBtn.onclick = () => { prBtn.disabled = true; mergeBtn.disabled = false; document.getElementById("prLog").textContent = "Pull Request: feature/git-branch-demo → main. 변경 내용을 검토한 뒤 merge할 수 있습니다."; };
-mergeBtn.onclick = () => { mergeBtn.disabled = true; document.getElementById("prLog").textContent = "Merge: feature의 변경이 main에 통합되었습니다. 이후 다른 작업공간에서는 git switch main → git pull로 최신 상태를 받을 수 있습니다."; };
-resetFlow();
-renderCommitTree();
-</script>
-</body>
-</html>
+const stages=["stage-work","stage-stage","stage-commit","stage-remote"],files=[["index.html","추적 중"],["AGENTS.md","프로젝트 규칙"],["docs/DECISIONS.md","설계 결정"]],log=document.getElementById("log"),tree=document.getElementById("tree"),b={modify:document.getElementById("modify"),add:document.getElementById("add"),commit:document.getElementById("commit"),push:document.getElementById("push"),reset:document.getElementById("reset")};function highlight(n){stages.forEach((id,i)=>document.getElementById(id).classList.toggle("active",i===n))}function renderFiles(){tree.innerHTML=files.map(([n,s])=>`<div class="file"><span>📄 ${n}</span><span class="badge">${s}</span></div>`).join("")}function reset(){highlight(-1);log.textContent="「파일 수정」부터 눌러보세요.";b.modify.disabled=false;b.add.disabled=true;b.commit.disabled=true;b.push.disabled=true;renderFiles()}b.modify.onclick=()=>{highlight(0);log.textContent="Working Tree에 변경이 생겼습니다.\n아직 commit에는 들어가지 않았습니다.";b.modify.disabled=true;b.add.disabled=false};b.add.onclick=()=>{highlight(1);log.textContent="변경을 Staging Area에 올렸습니다.";b.add.disabled=true;b.commit.disabled=false};b.commit.onclick=()=>{highlight(2);log.textContent="Commit이 생성되었습니다.\nGit 기록에 하나의 완성된 시점이 생겼습니다.";b.commit.disabled=true;b.push.disabled=false};b.push.onclick=()=>{highlight(3);log.textContent="git push가 실행되었다고 가정합니다.\nCommit이 Remote(GitHub)에 공유되었습니다.";b.push.disabled=true};b.reset.onclick=reset;
+const ct=document.getElementById("commitTree"),bb=document.getElementById("branchBtn"),fb=document.getElementById("featureBtn"),fp=document.getElementById("featurePushBtn");let state=0;function render(){if(state===0)ct.innerHTML='<div class="branch"><div class="branch-label">main</div><div class="node active">A<br>initial</div><div class="node">B<br>main</div></div><div class="merge-line">● 원 하나가 하나의 commit입니다.</div>';else if(state===1)ct.innerHTML='<div class="branch"><div class="branch-label">main</div><div class="node">A</div><div class="node active">B</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature active">C<br>feature</div></div><div class="merge-line">↳ feature는 B에서 갈라집니다.</div>';else if(state===2)ct.innerHTML='<div class="branch"><div class="branch-label">main</div><div class="node">A</div><div class="node">B</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C</div><div class="node feature active">D</div></div><div class="merge-line">↳ feature에서 C → D로 commit이 추가됩니다.</div>';else ct.innerHTML='<div class="branch"><div class="branch-label">main</div><div class="node">A</div><div class="node">B</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C</div><div class="node feature">D</div><div class="node remote">R<br>origin/feature</div></div><div class="merge-line">↳ push하면 GitHub에 원격 branch가 보입니다.</div>'}bb.onclick=()=>{state=1;bb.disabled=true;fb.disabled=false;render()};fb.onclick=()=>{state=2;fb.disabled=true;fp.disabled=false;render()};fp.onclick=()=>{state=3;fp.disabled=true;render()};document.getElementById("pullBtn").onclick=()=>document.getElementById("pullLog").textContent="git pull: 원격 main의 최신 상태를 가져와 현재 작업공간에 반영했습니다.";document.getElementById("prBtn").onclick=()=>{document.getElementById("prLog").textContent="Pull Request: feature → main 변경을 검토하고 합칠 준비가 되었습니다.";document.getElementById("prBtn").disabled=true;document.getElementById("mergeBtn").disabled=false};document.getElementById("mergeBtn").onclick=()=>{document.getElementById("prLog").textContent="Merge: feature의 변경이 main에 통합되었습니다. 다른 작업공간에서는 git pull로 최신 main을 받을 수 있습니다.";document.getElementById("mergeBtn").disabled=true};reset();render();
+</script></body></html>
