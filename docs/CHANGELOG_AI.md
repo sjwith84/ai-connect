@@ -8,4 +8,9 @@
 - Added `docs/GIT_TUTORIAL.md` for conceptual documentation.
 - Added `docs/DECISIONS.md` for architecture decisions.
 - Added this changelog.
-- Next: create the interactive `index.html` tutorial.
+- Added `index.html`, a dependency-free interactive tutorial showing Working Tree → Staging Area → Commit → Remote.
+
+### Verification note
+- The repository was empty at the beginning of this task.
+- Files were created directly through the GitHub connection and each creation produced a Git commit.
+- The tutorial is conceptual: its buttons simulate the Git lifecycle rather than executing local Git commands in the browser.
