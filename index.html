@@ -12,7 +12,7 @@ main { width: min(1100px, 94vw); margin: 0 auto; padding: 42px 0 60px; }
 h1 { margin: 0 0 10px; font-size: clamp(30px, 5vw, 52px); }
 .subtitle { color: #aab4c8; margin-bottom: 30px; line-height: 1.6; }
 .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: stretch; }
-.stage { position: relative; border: 1px solid #2b3550; border-radius: 16px; padding: 20px; background: #121a2d; min-height: 190px; transition: .25s; }
+.stage { border: 1px solid #2b3550; border-radius: 16px; padding: 20px; background: #121a2d; min-height: 170px; transition: .25s; }
 .stage.active { border-color: #7dd3fc; transform: translateY(-3px); box-shadow: 0 10px 30px #0006; }
 .stage h2 { margin: 0 0 8px; font-size: 19px; }
 .stage p { color: #aab4c8; line-height: 1.55; margin: 0; }
@@ -27,22 +27,30 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .file-tree { display: grid; gap: 8px; margin-top: 16px; }
 .file { display: flex; justify-content: space-between; gap: 20px; padding: 10px 12px; background: #0b1222; border: 1px solid #202b43; border-radius: 9px; }
 .badge { color: #9fb0ca; font-size: 13px; }
+.commit-tree { margin-top: 18px; padding: 22px; background: #0b1222; border: 1px solid #202b43; border-radius: 14px; overflow-x: auto; }
+.branch { display: flex; align-items: center; min-width: 650px; margin: 12px 0; }
+.branch-label { width: 90px; color: #9fb0ca; font-size: 13px; }
+.node { position: relative; display: grid; place-items: center; min-width: 88px; height: 58px; margin-right: 34px; border: 2px solid #64748b; border-radius: 12px; background: #121a2d; font-size: 12px; }
+.node::after { content: ""; position: absolute; width: 34px; height: 2px; right: -36px; background: #475569; }
+.node:last-child::after { display: none; }
+.node.active { border-color: #7dd3fc; box-shadow: 0 0 0 3px #7dd3fc22; }
+.node.feature { border-color: #a78bfa; }
+.merge-line { color: #aab4c8; font-size: 13px; margin: 6px 0 6px 90px; }
 .explain { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .explain > div { padding: 18px; border-radius: 14px; background: #121a2d; border: 1px solid #2b3550; }
 .explain h3 { margin-top: 0; }
-code { color: #c4b5fd; }
 @media (max-width: 800px) { .pipeline { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); min-height: 18px; } .explain { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <main>
 <h1>Git은 어떻게 움직일까?</h1>
-<div class="subtitle">파일을 수정하고 → 스테이징하고 → 커밋하고 → GitHub에 올리는 흐름을 버튼으로 따라가 보세요.</div>
+<div class="subtitle">Working Tree → Staging → Commit → Remote 흐름과, commit이 쌓이면서 만들어지는 Git의 브랜치 트리를 직접 따라가 보세요.</div>
 
 <section class="pipeline" aria-label="Git workflow">
   <div class="stage" id="stage-work"><h2>① Working Tree</h2><p>내가 실제로 수정하고 있는 현재 파일 상태.</p></div>
   <div class="arrow">→</div>
-  <div class="stage" id="stage-stage"><h2>② Staging Area</h2><p>다음 커밋에 포함할 변경을 선택해 모아두는 영역.</p></div>
+  <div class="stage" id="stage-stage"><h2>② Staging Area</h2><p>다음 commit에 포함할 변경을 선택해 모아두는 영역.</p></div>
   <div class="arrow">→</div>
   <div class="stage" id="stage-commit"><h2>③ Commit</h2><p>특정 시점의 프로젝트 상태를 기록으로 남김.</p></div>
   <div class="arrow">→</div>
@@ -50,7 +58,7 @@ code { color: #c4b5fd; }
 </section>
 
 <section class="card">
-  <h2>직접 따라하기</h2>
+  <h2>1. 기본 흐름 직접 따라하기</h2>
   <div class="controls">
     <button class="primary" id="modify">파일 수정</button>
     <button id="add" disabled>git add</button>
@@ -62,31 +70,58 @@ code { color: #c4b5fd; }
   <div class="file-tree" id="tree"></div>
 </section>
 
+<section class="card">
+  <h2>2. Commit이 쌓이면 '트리'가 된다</h2>
+  <p class="subtitle">main에서 작업하다가 feature 브랜치를 만들고, 다시 main에 합치는 과정을 시뮬레이션합니다.</p>
+  <div class="controls">
+    <button class="primary" id="branchBtn">feature 브랜치 생성</button>
+    <button id="featureBtn" disabled>feature에서 commit</button>
+    <button id="mergeBtn" disabled>main에 merge</button>
+  </div>
+  <div class="commit-tree" id="commitTree"></div>
+</section>
+
 <section class="explain">
   <div><h3>왜 Commit이 필요한가?</h3><p>Commit은 단순 업로드가 아니라 프로젝트의 한 시점을 고정하는 기록입니다. 나중에 무엇이 바뀌었는지 비교하고 이전 상태로 돌아갈 기준이 됩니다.</p></div>
-  <div><h3>AI와 함께 쓸 때</h3><p>대화는 설계와 토론에 사용하고, Git 저장소는 현재 코드와 변경 이력을 보존합니다. 채팅창이 바뀌어도 저장소에서 프로젝트 상태를 다시 읽을 수 있습니다.</p></div>
+  <div><h3>AI와 함께 쓸 때</h3><p>대화는 설계와 토론에 사용하고, Git 저장소는 현재 코드와 버전 이력을 보존합니다. 채팅창이 바뀌어도 저장소와 Markdown 문서에서 프로젝트 상태와 설계 의도를 다시 읽을 수 있습니다.</p></div>
 </section>
 </main>
 <script>
 const stages = ["stage-work", "stage-stage", "stage-commit", "stage-remote"];
-const files = [
-  ["index.html", "추적 중"],
-  ["AGENTS.md", "프로젝트 규칙"],
-  ["docs/DECISIONS.md", "설계 결정"]
-];
-let step = 0;
+const files = [["index.html", "추적 중"], ["AGENTS.md", "프로젝트 규칙"], ["docs/DECISIONS.md", "설계 결정"]];
 const log = document.getElementById("log");
 const tree = document.getElementById("tree");
 const buttons = { modify: document.getElementById("modify"), add: document.getElementById("add"), commit: document.getElementById("commit"), push: document.getElementById("push"), reset: document.getElementById("reset") };
 function highlight(n) { stages.forEach((id, i) => document.getElementById(id).classList.toggle("active", i === n)); }
-function renderTree() { tree.innerHTML = files.map(([name, status]) => `<div class="file"><span>📄 ${name}</span><span class="badge">${status}</span></div>`).join(""); }
-function reset() { step = 0; highlight(-1); log.textContent = "시작하려면 「파일 수정」을 눌러보세요."; buttons.modify.disabled = false; buttons.add.disabled = true; buttons.commit.disabled = true; buttons.push.disabled = true; renderTree(); }
-buttons.modify.onclick = () => { step = 1; highlight(0); log.textContent = "Working Tree에 변경이 생겼습니다.\n예: index.html의 JavaScript를 수정했습니다.\n아직 commit에는 들어가지 않았습니다."; buttons.modify.disabled = true; buttons.add.disabled = false; };
-buttons.add.onclick = () => { step = 2; highlight(1); log.textContent = "변경을 Staging Area에 올렸습니다.\n이제 다음 commit에 포함할 변경을 선택한 상태입니다."; buttons.add.disabled = true; buttons.commit.disabled = false; };
-buttons.commit.onclick = () => { step = 3; highlight(2); log.textContent = "Commit이 생성되었습니다.\n예: feat: add interactive git tutorial\n이제 로컬 Git 기록에는 하나의 완성된 시점이 생겼습니다."; buttons.commit.disabled = true; buttons.push.disabled = false; };
-buttons.push.onclick = () => { step = 4; highlight(3); log.textContent = "git push가 실행되었다고 가정합니다.\n이제 Commit이 Remote(GitHub)에도 공유되었습니다.\n실제 Git 명령을 실행하는 대신 개념을 시각적으로 보여주는 튜토리얼입니다."; buttons.push.disabled = true; };
-buttons.reset.onclick = reset;
-reset();
+function renderFiles() { tree.innerHTML = files.map(([name, status]) => `<div class="file"><span>📄 ${name}</span><span class="badge">${status}</span></div>`).join(""); }
+function resetFlow() { highlight(-1); log.textContent = "시작하려면 「파일 수정」을 눌러보세요."; buttons.modify.disabled = false; buttons.add.disabled = true; buttons.commit.disabled = true; buttons.push.disabled = true; renderFiles(); }
+buttons.modify.onclick = () => { highlight(0); log.textContent = "Working Tree에 변경이 생겼습니다.\n예: index.html의 JavaScript를 수정했습니다.\n아직 commit에는 들어가지 않았습니다."; buttons.modify.disabled = true; buttons.add.disabled = false; };
+buttons.add.onclick = () => { highlight(1); log.textContent = "변경을 Staging Area에 올렸습니다.\n이제 다음 commit에 포함할 변경을 선택한 상태입니다."; buttons.add.disabled = true; buttons.commit.disabled = false; };
+buttons.commit.onclick = () => { highlight(2); log.textContent = "Commit이 생성되었습니다.\n예: feat: add interactive git tutorial\nGit 기록에 하나의 완성된 시점이 생겼습니다."; buttons.commit.disabled = true; buttons.push.disabled = false; };
+buttons.push.onclick = () => { highlight(3); log.textContent = "git push가 실행되었다고 가정합니다.\nCommit이 Remote(GitHub)에도 공유되었습니다.\n이 페이지의 기본 흐름은 개념을 시각화하는 튜토리얼입니다."; buttons.push.disabled = true; };
+buttons.reset.onclick = resetFlow;
+
+const commitTree = document.getElementById("commitTree");
+const branchBtn = document.getElementById("branchBtn");
+const featureBtn = document.getElementById("featureBtn");
+const mergeBtn = document.getElementById("mergeBtn");
+let treeState = 0;
+function renderCommitTree() {
+  if (treeState === 0) {
+    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node active">A<br>initial</div><div class="node">B<br>main</div></div><div class="merge-line">● 각 원은 하나의 commit입니다. 오른쪽으로 갈수록 시간이 흐릅니다.</div>`;
+  } else if (treeState === 1) {
+    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node active">A<br>initial</div><div class="node">B<br>main</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature active">C<br>feature</div></div><div class="merge-line">↳ feature는 B에서 갈라져 독립적으로 작업할 수 있습니다.</div>`;
+  } else if (treeState === 2) {
+    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node">A<br>initial</div><div class="node">B<br>main</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C<br>feature</div><div class="node feature active">D<br>feature</div></div><div class="merge-line">↳ feature에서 C → D 두 개의 commit을 만들었습니다.</div>`;
+  } else {
+    commitTree.innerHTML = `<div class="branch"><div class="branch-label">main</div><div class="node">A<br>initial</div><div class="node">B<br>main</div><div class="node active">M<br>merge</div></div><div class="branch"><div class="branch-label">feature</div><div class="node"></div><div class="node feature">C<br>feature</div><div class="node feature">D<br>feature</div></div><div class="merge-line">↳ merge commit M이 main에 feature의 변경을 통합했습니다.</div>`;
+  }
+}
+branchBtn.onclick = () => { treeState = 1; branchBtn.disabled = true; featureBtn.disabled = false; renderCommitTree(); };
+featureBtn.onclick = () => { treeState = 2; featureBtn.disabled = true; mergeBtn.disabled = false; renderCommitTree(); };
+mergeBtn.onclick = () => { treeState = 3; mergeBtn.disabled = true; renderCommitTree(); };
+resetFlow();
+renderCommitTree();
 </script>
 </body>
 </html>
