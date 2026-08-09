@@ -10,7 +10,13 @@
 - Added this changelog.
 - Added `index.html`, a dependency-free interactive tutorial showing Working Tree → Staging Area → Commit → Remote.
 
+### Branch workflow experiment
+- Created the real Git branch `feature/git-branch-demo` from `main`.
+- Extended `index.html` with an interactive explanation of branch creation, feature commits, remote tracking, Pull Request, merge, clone, pull, fetch, and switch.
+- Updated `docs/GIT_TUTORIAL.md` with the corresponding conceptual workflow and command examples.
+- The branch is intentionally kept separate from `main` so the real branch and Pull Request state can be inspected before merging.
+
 ### Verification note
-- The repository was empty at the beginning of this task.
-- Files were created directly through the GitHub connection and each creation produced a Git commit.
-- The tutorial is conceptual: its buttons simulate the Git lifecycle rather than executing local Git commands in the browser.
+- Files are being modified directly through the GitHub connection, and each file update creates a real Git commit on the selected branch.
+- The tutorial's buttons simulate Git commands rather than executing local Git commands in the browser.
+- The branch experiment itself is real GitHub state: `feature/git-branch-demo` is a real branch with its own commits.
