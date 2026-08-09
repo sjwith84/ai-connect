@@ -1,5 +1,43 @@
 # AI Development Changelog
 
+## 2026-08-10 00:40 KST
+
+### Green UI branch selected and merged
+
+**작업**
+- 사용자가 GitHub에서 `feature/green-ui` Pull Request를 직접 확인하고 `main`에 merge했다.
+- `main`을 다시 읽어 녹색 UI가 현재 프로젝트 기준 상태임을 확인했다.
+- 새 채팅/컨텍스트 슬라이딩 이후에도 이 저장소를 읽어 작업을 복원하는 테스트 단계로 진입했다.
+
+**변경 파일**
+- `index.html`
+- `AGENTS.md`
+- `docs/GIT_TUTORIAL.md`
+- `docs/CHANGELOG_AI.md`
+
+**주요 변경점**
+- 현재 `main`의 `index.html`은 어두운 녹색 테마다.
+- `AGENTS.md`는 작업 시작 전 최신 CHANGELOG와 설계 문서를 읽도록 규정한다.
+- CHANGELOG에는 KST 시간, 작업, 변경 파일, 주요 변경점, 결정, 현재 상태, 다음 작업을 기록한다.
+
+**결정 사항**
+- 파란색 기준 branch와 녹색 branch를 실제 Git branch로 분리해 비교했다.
+- 사용자가 녹색 버전을 선택했고 Pull Request를 통해 `main`에 merge했다.
+- 이후 작업의 기준은 `main`의 녹색 UI 버전이다.
+
+**현재 상태**
+- 기본 branch: `main`
+- 현재 프로젝트 기준: 🟢 Green UI
+- `feature/green-ui`의 변경은 `main`에 merge 완료.
+- `feature/git-branch-demo`와 `feature/green-ui`는 과거 작업 이력을 보존하는 branch로 남아 있다.
+
+**다음 작업**
+- 새 채팅에서 GitHub의 `main`을 읽는다.
+- `AGENTS.md` → 최신 `CHANGELOG_AI.md` → `DECISIONS.md` → 실제 코드를 순서대로 확인한다.
+- 대화 컨텍스트 없이도 현재 프로젝트 상태와 직전 작업을 복원할 수 있는지 검증한다.
+
+---
+
 ## 2026-08-09 23:39 KST
 
 ### Branch experiment: green UI + context recovery rules
@@ -12,6 +50,7 @@
 **변경 파일**
 - `index.html`
 - `AGENTS.md`
+- `docs/DECISIONS.md`
 - `docs/GIT_TUTORIAL.md`
 - `docs/CHANGELOG_AI.md`
 
@@ -28,10 +67,10 @@
 - 사용자의 선택 전에는 `main`에 merge하지 않는다.
 
 **현재 상태**
-- 현재 작업 branch: `feature/green-ui`
+- 당시 작업 branch: `feature/green-ui`
 - 기준 branch: `feature/git-branch-demo`
 - 녹색 UI와 문서 규칙 변경은 이 branch에 실제 commit으로 기록됨.
-- `main`에는 아직 merge하지 않음.
+- 당시에는 `main`에 아직 merge하지 않은 상태였음.
 
 **다음 작업**
 - 사용자가 GitHub에서 `feature/green-ui`의 변경을 직접 확인.
