@@ -16,10 +16,13 @@ Git을 파일 저장소가 아니라 **프로젝트의 상태를 시간에 따�
 특정 시점의 프로젝트 상태를 하나의 기록으로 남긴다.
 
 ### Branch
-기존 기록을 기준으로 독립적인 작업 흐름을 만든다.
+특정 commit을 가리키는 이름표이며 독립적인 작업 흐름을 만들 수 있다.
 
 ### Remote
-GitHub 같은 서버에 저장된 프로젝트의 공유본.
+GitHub 같은 서버에 저장된 프로젝트의 원격 저장소다. `origin`은 흔히 이 원격 저장소를 가리키는 이름으로 사용한다.
+
+### Pull Request
+한 branch의 변경을 다른 branch에 합치기 전에 검토하고 논의하기 위한 GitHub의 협업 단위다.
 
 ## 기본 흐름
 
@@ -35,17 +38,91 @@ Commit History
 Remote (GitHub)
 ```
 
+## Branch 협업 흐름
+
+```text
+main:    A ── B ───────────── M
+              \             /
+feature:       C ── D ──────
+
+C/D를 만든 뒤 push
+        ↓
+Pull Request: feature → main
+        ↓
+Merge
+        ↓
+main에 M으로 통합
+```
+
+## 다른 컴퓨터에서 받기
+
+### 처음 프로젝트를 받는 경우
+
+```bash
+git clone <repository-url>
+cd ai-connect
+```
+
+`clone`은 원격 저장소의 파일과 Git 이력을 새 로컬 저장소로 가져오는 작업이다.
+
+### 이미 clone한 프로젝트를 최신화하는 경우
+
+```bash
+git switch main
+git pull
+```
+
+`pull`은 원격의 최신 변경을 가져와 현재 branch에 통합한다.
+
+### 원격 feature branch를 확인하는 경우
+
+```bash
+git fetch origin
+git switch feature/git-branch-demo
+```
+
+`fetch`는 원격의 변경 정보를 가져오고, `switch`는 작업할 branch를 선택한다.
+
 ## 이 프로젝트의 AI 작업 방식
 
 ChatGPT와의 대화는 설계와 추론을 위한 공간이고, Git 저장소는 프로젝트의 영속 상태다.
 
 새 채팅으로 이동하거나 대화 컨텍스트가 줄어들어도 다음을 읽으면 작업을 복원할 수 있도록 한다.
 
-- `AGENTS.md`: 지속적인 작업 규칙
+- `AGENTS.md`: 지속적인 AI 작업 규칙
 - `docs/DECISIONS.md`: 왜 이런 구조를 선택했는지
-- `docs/CHANGELOG_AI.md`: 최근 AI 작업 내역
+- `docs/CHANGELOG_AI.md`: 시간순 작업 상태와 복구 정보
 - 실제 코드: 현재의 최종 상태
+
+## CHANGELOG를 통한 컨텍스트 복구
+
+`CHANGELOG_AI.md`는 단순한 작업 일지가 아니다. 컨텍스트 슬라이딩 또는 새 채팅 이후 AI가 **어떤 branch에서 무엇을 했고, 왜 그렇게 했으며, 현재 무엇이 남았는지** 복원하기 위한 상태 기록이다.
+
+각 의미 있는 작업에는 다음을 남긴다.
+
+- 한국 시간(KST) 기준 날짜와 시각
+- 작업 내용
+- 변경 파일
+- 주요 변경점
+- 설계/결정 사항
+- 현재 branch와 현재 상태
+- 다음 작업
+
+AI는 작업을 시작하기 전에 최신 CHANGELOG 항목을 먼저 읽는다.
+
+## 이번 branch 실험
+
+`feature/git-branch-demo`의 파란색 UI를 기준으로 `feature/green-ui`를 분기했다. `feature/green-ui`에서는 UI를 **어두운 녹색 테마**로 변경하고 CHANGELOG/AGENTS 규칙을 강화했다.
+
+이 branch를 GitHub에서 직접 확인하고, 사용자가 이 버전을 프로젝트의 기준으로 선택할지 결정하는 것이 이번 실험의 목적이다. **branch 선택과 main merge는 사용자가 직접 확인한 뒤 진행한다.**
 
 ## 인터랙티브 페이지
 
-`index.html`에서 버튼을 눌러 Working Tree → Staging → Commit → Remote 흐름을 시각적으로 확인한다.
+`index.html`에서 다음 흐름을 버튼으로 확인한다.
+
+1. Working Tree → Staging → Commit → Remote
+2. main → feature branch → feature commits → push
+3. Pull Request → merge
+4. 다른 작업공간에서 clone / pull / fetch / switch
+
+페이지의 버튼은 **실제 Git 명령을 실행하는 것이 아니라 개념을 시각화**한다. 실제 branch와 commit은 이 튜토리얼 repository 자체에서 확인할 수 있다.
