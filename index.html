@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git 흐름 인터랙티브 튜토리얼</title>
+<style>
+:root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: #0b1020; color: #e8ecf5; }
+main { width: min(1100px, 94vw); margin: 0 auto; padding: 42px 0 60px; }
+h1 { margin: 0 0 10px; font-size: clamp(30px, 5vw, 52px); }
+.subtitle { color: #aab4c8; margin-bottom: 30px; line-height: 1.6; }
+.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: stretch; }
+.stage { position: relative; border: 1px solid #2b3550; border-radius: 16px; padding: 20px; background: #121a2d; min-height: 190px; transition: .25s; }
+.stage.active { border-color: #7dd3fc; transform: translateY(-3px); box-shadow: 0 10px 30px #0006; }
+.stage h2 { margin: 0 0 8px; font-size: 19px; }
+.stage p { color: #aab4c8; line-height: 1.55; margin: 0; }
+.arrow { display: grid; place-items: center; color: #6f7b93; font-size: 25px; }
+.card { margin-top: 22px; padding: 24px; border: 1px solid #2b3550; border-radius: 16px; background: #10172a; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+button { border: 1px solid #34415f; background: #19243a; color: #eef4ff; border-radius: 10px; padding: 11px 15px; cursor: pointer; font-weight: 650; }
+button:hover { background: #22304b; }
+button.primary { background: #2563eb; border-color: #3b82f6; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+#log { min-height: 100px; white-space: pre-wrap; color: #c9d4e8; line-height: 1.65; }
+.file-tree { display: grid; gap: 8px; margin-top: 16px; }
+.file { display: flex; justify-content: space-between; gap: 20px; padding: 10px 12px; background: #0b1222; border: 1px solid #202b43; border-radius: 9px; }
+.badge { color: #9fb0ca; font-size: 13px; }
+.explain { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.explain > div { padding: 18px; border-radius: 14px; background: #121a2d; border: 1px solid #2b3550; }
+.explain h3 { margin-top: 0; }
+code { color: #c4b5fd; }
+@media (max-width: 800px) { .pipeline { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); min-height: 18px; } .explain { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Git은 어떻게 움직일까?</h1>
+<div class="subtitle">파일을 수정하고 → 스테이징하고 → 커밋하고 → GitHub에 올리는 흐름을 버튼으로 따라가 보세요.</div>
+
+<section class="pipeline" aria-label="Git workflow">
+  <div class="stage" id="stage-work"><h2>① Working Tree</h2><p>내가 실제로 수정하고 있는 현재 파일 상태.</p></div>
+  <div class="arrow">→</div>
+  <div class="stage" id="stage-stage"><h2>② Staging Area</h2><p>다음 커밋에 포함할 변경을 선택해 모아두는 영역.</p></div>
+  <div class="arrow">→</div>
+  <div class="stage" id="stage-commit"><h2>③ Commit</h2><p>특정 시점의 프로젝트 상태를 기록으로 남김.</p></div>
+  <div class="arrow">→</div>
+  <div class="stage" id="stage-remote"><h2>④ Remote</h2><p>GitHub 같은 원격 저장소에 기록을 공유.</p></div>
+</section>
+
+<section class="card">
+  <h2>직접 따라하기</h2>
+  <div class="controls">
+    <button class="primary" id="modify">파일 수정</button>
+    <button id="add" disabled>git add</button>
+    <button id="commit" disabled>git commit</button>
+    <button id="push" disabled>git push</button>
+    <button id="reset">처음부터</button>
+  </div>
+  <div id="log">시작하려면 「파일 수정」을 눌러보세요.</div>
+  <div class="file-tree" id="tree"></div>
+</section>
+
+<section class="explain">
+  <div><h3>왜 Commit이 필요한가?</h3><p>Commit은 단순 업로드가 아니라 프로젝트의 한 시점을 고정하는 기록입니다. 나중에 무엇이 바뀌었는지 비교하고 이전 상태로 돌아갈 기준이 됩니다.</p></div>
+  <div><h3>AI와 함께 쓸 때</h3><p>대화는 설계와 토론에 사용하고, Git 저장소는 현재 코드와 변경 이력을 보존합니다. 채팅창이 바뀌어도 저장소에서 프로젝트 상태를 다시 읽을 수 있습니다.</p></div>
+</section>
+</main>
+<script>
+const stages = ["stage-work", "stage-stage", "stage-commit", "stage-remote"];
+const files = [
+  ["index.html", "추적 중"],
+  ["AGENTS.md", "프로젝트 규칙"],
+  ["docs/DECISIONS.md", "설계 결정"]
+];
+let step = 0;
+const log = document.getElementById("log");
+const tree = document.getElementById("tree");
+const buttons = { modify: document.getElementById("modify"), add: document.getElementById("add"), commit: document.getElementById("commit"), push: document.getElementById("push"), reset: document.getElementById("reset") };
+function highlight(n) { stages.forEach((id, i) => document.getElementById(id).classList.toggle("active", i === n)); }
+function renderTree() { tree.innerHTML = files.map(([name, status]) => `<div class="file"><span>📄 ${name}</span><span class="badge">${status}</span></div>`).join(""); }
+function reset() { step = 0; highlight(-1); log.textContent = "시작하려면 「파일 수정」을 눌러보세요."; buttons.modify.disabled = false; buttons.add.disabled = true; buttons.commit.disabled = true; buttons.push.disabled = true; renderTree(); }
+buttons.modify.onclick = () => { step = 1; highlight(0); log.textContent = "Working Tree에 변경이 생겼습니다.\n예: index.html의 JavaScript를 수정했습니다.\n아직 commit에는 들어가지 않았습니다."; buttons.modify.disabled = true; buttons.add.disabled = false; };
+buttons.add.onclick = () => { step = 2; highlight(1); log.textContent = "변경을 Staging Area에 올렸습니다.\n이제 다음 commit에 포함할 변경을 선택한 상태입니다."; buttons.add.disabled = true; buttons.commit.disabled = false; };
+buttons.commit.onclick = () => { step = 3; highlight(2); log.textContent = "Commit이 생성되었습니다.\n예: feat: add interactive git tutorial\n이제 로컬 Git 기록에는 하나의 완성된 시점이 생겼습니다."; buttons.commit.disabled = true; buttons.push.disabled = false; };
+buttons.push.onclick = () => { step = 4; highlight(3); log.textContent = "git push가 실행되었다고 가정합니다.\n이제 Commit이 Remote(GitHub)에도 공유되었습니다.\n실제 Git 명령을 실행하는 대신 개념을 시각적으로 보여주는 튜토리얼입니다."; buttons.push.disabled = true; };
+buttons.reset.onclick = reset;
+reset();
+</script>
+</body>
+</html>
